@@ -124,7 +124,16 @@ export default function FileUpload({ onFileSelected, isProcessing }: FileUploadP
           setFiles(prev => {
             const newFiles = [...prev];
             newFiles[i].status = 'failed';
-            newFiles[i].error = err instanceof Error ? err.message : 'Unknown error';
+            
+            // Check for specific error messages
+            let errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            
+            // Make the error message more user-friendly
+            if (errorMessage.includes('The PDF is too large to process')) {
+              errorMessage = 'This PDF is too large for Claude to process. Please try a smaller PDF file (fewer pages or smaller file size).';
+            }
+            
+            newFiles[i].error = errorMessage;
             return newFiles;
           });
         }

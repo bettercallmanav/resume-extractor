@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { anthropicClient, MODEL, createResumeExtractionPrompt } from '@/lib/anthropic';
 import { ExtractResumeRequest, ExtractResumeResponse, ContactInfo } from '@/lib/types';
 
+// Maximum number of tokens allowed in Claude's context window
+const MAX_TOKENS = 180000; // Leave some buffer from the 200K limit
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Parse the request body
@@ -15,29 +18,54 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Create a message to Claude with the PDF document
-    const message = await anthropicClient.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: body.pdfBase64
+    let message;
+    try {
+      message = await anthropicClient.messages.create({
+        model: MODEL,
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: body.pdfBase64
+                }
+              },
+              {
+                type: 'text',
+                text: createResumeExtractionPrompt(body.pdfBase64)
               }
-            },
-            {
-              type: 'text',
-              text: createResumeExtractionPrompt(body.pdfBase64)
-            }
-          ]
-        }
-      ],
-    });
+            ]
+          }
+        ],
+      });
+    } catch (apiError: any) {
+      console.error('Claude API error:', apiError);
+      
+      // Check if it's a token limit error
+      if (apiError.message && apiError.message.includes('prompt is too long')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'The PDF is too large to process. Please try a smaller PDF file (fewer pages or smaller file size).' 
+          } as ExtractResumeResponse,
+          { status: 413 } // 413 Payload Too Large
+        );
+      }
+      
+      // Handle other API errors
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: apiError.message || 'Error communicating with Claude API' 
+        } as ExtractResumeResponse,
+        { status: 500 }
+      );
+    }
 
     // Extract the JSON response from Claude
     let responseText = '';
