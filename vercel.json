@@ -10,7 +10,7 @@
     "silent": true
   },
   "functions": {
-    "api/extract-resume/*.js": {
+    "src/app/api/extract-resume/route.ts": {
       "maxDuration": 60
     }
   }
