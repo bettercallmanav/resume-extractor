@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { validatePdfFile, formatFileSize, fileToBase64 } from '@/utils/pdf-helpers';
+import { validatePdfFile, formatFileSize } from '@/utils/pdf-helpers';
 import { FileWithPreview, BATCH_WARNING_THRESHOLD, AVG_PROCESSING_TIME_PER_FILE } from '@/lib/types';
 
 interface FileUploadProps {
@@ -11,7 +11,7 @@ interface FileUploadProps {
   currentFile: FileWithPreview | null;
 }
 
-export default function FileUpload({ onFileSelected, isProcessing, currentFile }: FileUploadProps) {
+export default function FileUpload({ onFileSelected, isProcessing }: FileUploadProps) {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -93,38 +93,7 @@ export default function FileUpload({ onFileSelected, isProcessing, currentFile }
     setWarning(null);
   };
 
-  const processNextFile = async () => {
-    // Find the next queued file
-    const nextFileIndex = files.findIndex(file => file.status === 'queued');
-    if (nextFileIndex === -1) return;
-
-    // Update status to processing
-    setFiles(prev => {
-      const newFiles = [...prev];
-      newFiles[nextFileIndex].status = 'processing';
-      return newFiles;
-    });
-
-    try {
-      // Process the file
-      await onFileSelected(files[nextFileIndex]);
-
-      // Update status to completed
-      setFiles(prev => {
-        const newFiles = [...prev];
-        newFiles[nextFileIndex].status = 'completed';
-        return newFiles;
-      });
-    } catch (err) {
-      // Update status to failed
-      setFiles(prev => {
-        const newFiles = [...prev];
-        newFiles[nextFileIndex].status = 'failed';
-        newFiles[nextFileIndex].error = err instanceof Error ? err.message : 'Unknown error';
-        return newFiles;
-      });
-    }
-  };
+  // Process files one by one
 
   const processAllFiles = async () => {
     // Reset any existing errors

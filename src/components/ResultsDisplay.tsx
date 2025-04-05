@@ -98,8 +98,8 @@ export default function ResultsDisplay({
 
   // Function to sort the data
   const sortedData = [...resumeDataList].sort((a, b) => {
-    let aValue: any;
-    let bValue: any;
+    let aValue: string | number | undefined;
+    let bValue: string | number | undefined;
 
     if (sortField === 'fileName') {
       aValue = a.fileName;

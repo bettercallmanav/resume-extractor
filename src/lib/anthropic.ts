@@ -12,6 +12,10 @@ export const MODEL = 'claude-3-5-sonnet-20240620';
 export function createResumeExtractionPrompt(pdfContent: string): string {
   return `
 Please analyze this resume PDF and extract the following contact information:
+
+${pdfContent}
+
+Based on the above resume content, please extract:
 1. Full Name
 2. Email Address
 3. Phone Number
