@@ -8,5 +8,10 @@
   "env": {},
   "github": {
     "silent": true
+  },
+  "functions": {
+    "api/extract-resume/*.js": {
+      "maxDuration": 60
+    }
   }
 }
